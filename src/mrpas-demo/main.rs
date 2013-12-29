@@ -19,15 +19,32 @@ pub mod mrpas;
 
 fn main() {
     let mut map = map::Map::example();
-    let focus = (20,10);
+    let focus = (35,9);
     let max_radius = 10;
     let mut start_angle_buf = [0f64, ..1028];
     let mut end_angle_buf = [0f64, ..1028];
-    let before_time = time::precise_time_ns();
-    mrpas::compute(&mut map, focus, max_radius,
-                   start_angle_buf.mut_slice_from(0),
-                   end_angle_buf.mut_slice_from(0));
-    let after_time = time::precise_time_ns();
+    let mut run_times = ~[];
+    let num_of_runs = 101u64;
+    let mut ctr = 0;
+    while ctr < num_of_runs {
+        map.reset();
+        let before_time = time::precise_time_ns();
+        mrpas::compute(&mut map, focus, max_radius,
+                       start_angle_buf.mut_slice_from(0),
+                       end_angle_buf.mut_slice_from(0));
+        let after_time = time::precise_time_ns();
+        run_times.push(after_time - before_time);
+        ctr += 1;
+    }
+    run_times.sort();
+    let median = run_times[50];
+    let mean = {
+        let mut res = 0;
+        for i in run_times.iter() {
+            res += *i;
+        }
+        res / num_of_runs
+    };
     map.draw_to_stdout((45, 20), focus);
-    println!("Run time: {:u} ns", (after_time - before_time));
+    println!("Over {:?} runs, mean: {:?} nsecs, median: {:?} nsecs", num_of_runs, mean, median);
 }
